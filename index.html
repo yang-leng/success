@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ABELE REVIEWER by Engr. BLBT</title>
+
+<!-- MathJax for clean math -->
+<script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['$$','$$']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+<style>
+:root{
+  --bg:#0b1220; --panel:#121a2b; --ink:#e8ecf5; --muted:#9fb1d1;
+  --accent:#3356ff; --accent2:#2144e6; --ok:#27c281; --bad:#ff5a7a; --border:#2b3552;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(180deg,#0b1220,#0b1220 60%,#0c1425);
+  color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.page{max-width:1000px;margin:24px auto;padding:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:16px}
+h1,h2,h3{margin:0 0 8px}
+.muted{color:var(--muted)}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.btn{padding:10px 14px;border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:12px;cursor:pointer;font-weight:700}
+.btn:hover{background:var(--accent2)}
+.btn.secondary{background:#0f1730;border-color:var(--border);color:var(--ink)}
+.btn.ghost{background:transparent;border:1px dashed var(--border);color:var(--muted)}
+.subjectBtn{width:100%;white-space:normal;text-align:center;line-height:1.2}
+.locked{opacity:.55;pointer-events:none;filter:grayscale(.2)}
+
+.progressBar{height:8px;background:#243156;border-radius:999px;overflow:hidden;margin:8px 0 0}
+.progressFill{height:100%;width:0%;background:linear-gradient(90deg,#6ea1ff,#4f7cff);transition:width .2s}
+.timer{font-weight:800}
+
+.choice{margin:10px 0;padding:12px;border:1px solid #3a4667;border-radius:12px;cursor:pointer}
+.choice.correct{background:#133721;border-color:var(--ok)}
+.choice.wrong{background:#3a1a24;border-color:var(--bad)}
+
+#solutionBox{
+  display:none;margin-top:12px;padding:12px;border:1px dashed #4a567a;background:#0f1730;border-radius:12px;
+  line-height:1.55;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-height:45vh;overflow:auto
+}
+#solutionBox mjx-container{max-width:100%;overflow-x:auto;overflow-y:hidden}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}
+.modal .content{background:#151c2c;border:1px solid var(--border);padding:20px;border-radius:14px;width:min(720px,100%)}
+.table{width:100%;border-collapse:collapse;margin-top:12px}
+.table th,.table td{border-bottom:1px solid var(--border);padding:8px;text-align:left;font-size:14px;vertical-align:top}
+.creatorTag{margin-left:6px;padding:2px 8px;border-radius:999px;font-size:12px;background:gold;color:#221;font-weight:800}
+.headerBar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.badge{display:inline-flex;gap:6px;align-items:center;background:#0f1730;border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:999px}
+.banner{background:#07122a;border:1px solid #1a2a55;color:#d1e4ff;margin:0 0 12px;border-radius:10px;padding:10px;text-align:center;font-weight:700}
+input[type="text"],input[type="password"]{
+  width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);background:#0f1730;color:var(--ink)
+}
+.small{font-size:12px}
+</style>
+</head>
+
+<body>
+<div id="bannerBar" class="page" style="padding-top:0;">
+  <div id="banner" class="banner" style="display:none;"></div>
+</div>
+
+<!-- ================= AREA SELECT ================= -->
+<div id="areaPage" class="page">
+  <div class="card">
+    <h1>ABELE REVIEWER by Engr. BLBT</h1>
+    <p id="lockNote" class="muted">🔒 Locked — tap Access Required to enter the key.</p>
+    <div class="grid3" id="areaButtons">
+      <button class="btn subjectBtn locked" data-area="AREA1">AREA 1</button>
+      <button class="btn subjectBtn locked" data-area="AREA2">AREA 2</button>
+      <button class="btn subjectBtn locked" data-area="AREA3">AREA 3</button>
+    </div>
+
+    <div class="headerBar">
+      <button class="btn" id="accessBtn">Access Required</button>
+      <button class="btn secondary" id="nicknameBtn">Set Nickname</button>
+      <button class="btn secondary" id="resetNickBtn">Reset Nickname</button>
+      <button class="btn secondary" id="leaderboardBtn">Leaderboard</button>
+      <button class="btn ghost" id="openAdminBtn">Creator Panel</button>
+      <span id="nickDisplay" class="badge">👤 Nickname: <em>not set</em></span>
+    </div>
+    <p class="small muted">Tip: Set your nickname first so scores show on the leaderboard.</p>
+  </div>
+</div>
+
+<!-- ================= CATEGORY SELECT ================= -->
+<div id="categoryPage" class="page" style="display:none;">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <h2 id="chosenAreaTitle"></h2>
+      <button class="btn secondary" onclick="backToAreas()">← Back</button>
+    </div>
+    <div class="grid3" style="margin-top:8px;">
+      <button class="btn subjectBtn" data-cat="OBJECTIVES">OBJECTIVES</button>
+      <button class="btn subjectBtn" data-cat="PROBLEM_SOLVING">PROBLEM SOLVING</button>
+      <button class="btn subjectBtn" data-cat="MIX">MIX</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODE PICKER MODAL ================= -->
+<div id="modeModal" class="modal">
+  <div class="content">
+    <h3>Select Mode</h3>
+    <p class="muted" id="modeDesc"></p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <button class="btn" id="normalBtn">Normal Mode (No Timer)</button>
+      <button class="btn secondary" id="timeBtn">Time Trial</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= QUIZ ================= -->
+<div id="quizPage" class="page" style="display:none;">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+      <h2 id="quizTitle"></h2>
+      <div id="timerBox" class="muted timer" style="display:none;">⏳ 00:00</div>
+    </div>
+    <div class="muted" id="progressText" style="margin:6px 0 10px;"></div>
+    <div class="progressBar"><div id="progressFill" class="progressFill"></div></div>
+    <div id="prompt" style="margin-top:10px;"></div>
+    <div id="choices"></div>
+    <div id="solutionBox"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn secondary" id="backBtn">Back</button>
+      <button class="btn secondary" id="prevBtn">Prev</button>
+      <button class="btn" id="nextBtn">Next</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= SCORE MODAL ================= -->
+<div id="scoreModal" class="modal">
+  <div class="content">
+    <h3 id="resultHeading">Result</h3>
+    <p id="finalScore"></p>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button class="btn" id="retryBtn">Try Again</button>
+      <button class="btn secondary" id="continueBtn">Back to Categories</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= ACCESS MODAL ================= -->
+<div id="accessModal" class="modal">
+  <div class="content">
+    <h3>Access Key Required</h3>
+    <p class="muted">Enter the key to unlock the reviewer.</p>
+    <input id="accessInput" type="password" placeholder="Enter key">
+    <button class="btn" id="unlockBtn">Unlock</button>
+  </div>
+</div>
+
+<!-- ================= NICKNAME MODAL ================= -->
+<div id="nickModal" class="modal">
+  <div class="content">
+    <h3>Set your nickname</h3>
+    <input id="nickInput" type="text" placeholder="e.g., Bayaw123">
+    <button class="btn" id="saveNickBtn">Save</button>
+  </div>
+</div>
+
+<!-- ================= LEADERBOARD MODAL ================= -->
+<div id="boardModal" class="modal">
+  <div class="content">
+    <h3>Leaderboard</h3>
+    <table class="table" id="boardTable">
+      <thead><tr><th>#</th><th>Nickname</th><th>Score</th><th>Area/Cat</th><th>Mode</th><th>Date</th></tr></thead>
+      <tbody><tr><td colspan="6" class="muted">Loading…</td></tr></tbody>
+    </table>
+    <button class="btn secondary" id="closeBoardBtn">Close</button>
+  </div>
+</div>
+
+<!-- ================= CREATOR / ADMIN MODAL ================= -->
+<div id="adminModal" class="modal">
+  <div class="content">
+    <h2>Creator Panel</h2>
+
+    <div id="adminLogin">
+      <p class="muted">Nickname must be <strong>Bryan</strong>. Enter PIN:</p>
+      <input id="adminPIN" type="password" placeholder="Enter PIN (001500)">
+      <button class="btn" id="adminEnterBtn">Enter</button>
+    </div>
+
+    <div id="adminPanel" style="display:none;">
+      <p>Welcome, <strong id="creatorName"></strong> <span class="creatorTag">⭐ Creator</span></p>
+
+      <h3>Site Lock</h3>
+      <div class="grid2">
+        <div class="card">
+          <p class="muted small">Access key users must type to unlock</p>
+          <input id="accessKeyInput" type="text" placeholder="Access Key">
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="btn" id="updateKeyBtn">Update Key</button>
+            <button class="btn secondary" id="lockSiteBtn">Lock Site</button>
+            <button class="btn secondary" id="unlockSiteBtn">Unlock Site</button>
+          </div>
+        </div>
+        <div class="card">
+          <p class="muted small">Announcement banner (shown at top)</p>
+          <input id="bannerInput" type="text" placeholder="Type banner message">
+          <div style="display:flex;gap:8px;margin-top:6px;">
+            <button class="btn" id="setBannerBtn">Set Banner</button>
+            <button class="btn secondary" id="clearBannerBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <h3 style="margin-top:10px;">Leaderboard Tools</h3>
+      <button class="btn secondary" id="clearLeaderboardBtn">Clear All Scores</button>
+
+      <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn ghost" id="closeAdminBtn">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= CONFIG ================= */
+/* Replace with your GAS Web App URL */
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbw5a3eHyn1WJglDOR8m_3jiAQwHKXh63v9u77FAiVqcDMpHvbdx4OG9l8380b04S4Is/exec";
+
+const CREATOR_NAME = "Bryan";
+const CREATOR_PIN  = "001500";
+const CREATOR_BADGE_HTML = '<span class="creatorTag">⭐ Creator</span>';
+/* Load access key from localStorage or default to PAPI */
+let ACCESS_KEY = localStorage.getItem('abele_access_key') || "PAPI";
+
+/* ================= STATE ================= */
+let unlocked=false;
+let currentArea='', currentCategory='', mode='normal'; // normal | time
+let questions=[], idx=0, correct=0, answered=new Map();
+
+/* Timer state */
+let timerId = null;
+let timeLimit = 0;   // minutes
+let timeLeft  = 0;   // seconds
+
+/* ================= HELPERS ================= */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function isCreator(name){ return (name||'').trim().toLowerCase()===CREATOR_NAME.toLowerCase(); }
+function typesetTargets(t){ if(window.MathJax?.typesetPromise) window.MathJax.typesetPromise(t).catch(()=>{}); }
+function typeset(){ if(window.MathJax?.typesetPromise) window.MathJax.typesetPromise().catch(()=>{}); }
+function formatTime(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+
+/* ================= DOM ================= */
+const areaButtons=document.getElementById('areaButtons');
+const lockNote=document.getElementById('lockNote');
+const accessModal=document.getElementById('accessModal');
+const accessBtn=document.getElementById('accessBtn');
+const accessInput=document.getElementById('accessInput');
+const unlockBtn=document.getElementById('unlockBtn');
+
+const nicknameBtn=document.getElementById('nicknameBtn');
+const resetNickBtn=document.getElementById('resetNickBtn');
+const nickModal=document.getElementById('nickModal');
+const nickInput=document.getElementById('nickInput');
+const saveNickBtn=document.getElementById('saveNickBtn');
+const nickDisplay=document.getElementById('nickDisplay');
+
+const areaPage=document.getElementById('areaPage');
+const categoryPage=document.getElementById('categoryPage');
+const quizPage=document.getElementById('quizPage');
+
+const chosenAreaTitle=document.getElementById('chosenAreaTitle');
+const quizTitle=document.getElementById('quizTitle');
+const timerBox=document.getElementById('timerBox');
+const progressText=document.getElementById('progressText');
+const progressFill=document.getElementById('progressFill');
+const promptEl=document.getElementById('prompt');
+const choicesEl=document.getElementById('choices');
+const solutionBox=document.getElementById('solutionBox');
+const nextBtn=document.getElementById('nextBtn');
+const prevBtn=document.getElementById('prevBtn');
+const backBtn=document.getElementById('backBtn');
+
+const scoreModal=document.getElementById('scoreModal');
+const resultHeading=document.getElementById('resultHeading');
+const finalScoreEl=document.getElementById('finalScore');
+const retryBtn=document.getElementById('retryBtn');
+const continueBtn=document.getElementById('continueBtn');
+
+const leaderboardBtn=document.getElementById('leaderboardBtn');
+const boardModal=document.getElementById('boardModal');
+const closeBoardBtn=document.getElementById('closeBoardBtn');
+const boardTable=document.getElementById('boardTable');
+
+const modeModal=document.getElementById('modeModal');
+const modeDesc=document.getElementById('modeDesc');
+const normalBtn=document.getElementById('normalBtn');
+const timeBtn=document.getElementById('timeBtn');
+
+const adminModal=document.getElementById('adminModal');
+const adminPIN=document.getElementById('adminPIN');
+const adminEnterBtn=document.getElementById('adminEnterBtn');
+const adminLogin=document.getElementById('adminLogin');
+const adminPanel=document.getElementById('adminPanel');
+const creatorNameEl=document.getElementById('creatorName');
+const accessKeyInput=document.getElementById('accessKeyInput');
+const bannerDiv=document.getElementById('banner');
+const bannerBar=document.getElementById('bannerBar');
+
+/* ================= Nickname ================= */
+function getNick(){ return (localStorage.getItem('abele_nick')||'').trim(); }
+function refreshNickUI(){
+  const n=getNick();
+  nickDisplay.innerHTML = n ? `👤 ${n}${isCreator(n)?CREATOR_BADGE_HTML:''}` : '👤 Nickname: <em>not set</em>';
+}
+nicknameBtn.onclick=()=>{ nickInput.value=getNick(); nickModal.style.display='flex'; };
+saveNickBtn.onclick=()=>{
+  const v=(nickInput.value||'').trim(); if(!v) return;
+  if(isCreator(v)){ const pin=prompt('Enter Creator PIN:'); if(pin!==CREATOR_PIN){ alert('Wrong PIN'); return; } }
+  localStorage.setItem('abele_nick', v); refreshNickUI(); nickModal.style.display='none';
+};
+resetNickBtn.onclick=()=>{ localStorage.removeItem('abele_nick'); refreshNickUI(); alert('Nickname reset.'); };
+refreshNickUI();
+
+/* ================= Lock (session) ================= */
+function setLockedUI(state){
+  document.querySelectorAll('[data-area]').forEach(b=> b.classList.toggle('locked', state));
+  lockNote.style.display = state ? 'block' : 'none';
+  unlocked = !state;
+}
+setLockedUI(true); // start locked each visit
+
+accessBtn.onclick=()=>{ accessInput.value=''; accessModal.style.display='flex'; };
+unlockBtn.onclick=()=>{
+  const key=(accessInput.value||'').trim().toUpperCase();
+  const currentKey = (localStorage.getItem('abele_access_key') || ACCESS_KEY).toUpperCase();
+  if(key===currentKey){ setLockedUI(false); accessModal.style.display='none'; }
+  else { alert('Contact PAPI GANG FOR THE 🗝️ TO UNLOCK THIS REVIEW SITE'); accessInput.focus(); }
+};
+accessModal.addEventListener('click',e=>{ if(e.target===accessModal) accessModal.style.display='none'; });
+
+/* ================= Banner (persist) ================= */
+function loadBanner(){
+  const msg = localStorage.getItem('abele_banner') || '';
+  if(msg){ bannerDiv.textContent = msg; bannerDiv.style.display='block'; }
+  else { bannerDiv.style.display='none'; }
+}
+loadBanner();
+
+/* ================= Navigation ================= */
+areaButtons.addEventListener('click', (e)=>{
+  const btn=e.target.closest('[data-area]'); if(!btn) return;
+  if(!unlocked){ accessModal.style.display='flex'; return; }
+  currentArea=btn.getAttribute('data-area');
+  chosenAreaTitle.textContent=currentArea;
+  areaPage.style.display='none'; categoryPage.style.display='block';
+});
+function backToAreas(){
+  categoryPage.style.display='none'; areaPage.style.display='block';
+}
+
+/* Category → Mode modal */
+categoryPage.addEventListener('click',(e)=>{
+  const btn=e.target.closest('[data-cat]'); if(!btn) return;
+  const cat=btn.getAttribute('data-cat');
+  currentCategory = cat;
+  const mins = (cat==='OBJECTIVES')?60:(cat==='PROBLEM_SOLVING')?120:180;
+  modeDesc.textContent = `Time Trial for ${cat}: ${mins} minutes. Normal Mode has no timer.`;
+  modeModal.style.display='flex';
+});
+normalBtn.onclick=()=>{ mode='normal'; modeModal.style.display='none'; startExam(currentCategory, mode); };
+timeBtn.onclick  =()=>{ mode='time';   modeModal.style.display='none'; startExam(currentCategory, mode); };
+modeModal.addEventListener('click',e=>{ if(e.target===modeModal) modeModal.style.display='none'; });
+
+/* ================= Question Banks ================= */
+/* 👉👉 PASTE your 100 Area 1 Objectives here (replace the array) */
+const AREA1_OBJECTIVES = [
+  { q:"API stands for", c:["American Petrol Institute","American Petroleum Institute","Automotive Petroleum Institute","Agricultural Power Institute"], a:1 },
+  { q:"Carabao is about how many times stronger than a man for work?", c:["0.1","10","1","100"], a:1 },
+  { q:"Law on Agricultural and Fisheries Mechanization", c:["RA 10915","RA 10601","PD 1096","RA 11203"], a:1 },
+  { q:"National Building Code of the Philippines", c:["RA 6541","PD 1096","RA 11203","RA 10068"], a:1 },
+  { q:"Engine rating measuring power delivered at flywheel", c:["Brake horsepower","Drawbar horsepower","Rated horsepower","Indicated horsepower"], a:0 },
+  { q:"Power delivered at tractor’s drawbar", c:["Brake horsepower","Drawbar horsepower","PTO horsepower","Rated horsepower"], a:1 },
+  { q:"Power outlet at rear of tractor to drive implements", c:["Drawbar","PTO","Hitch","Sprocket"], a:1 },
+  { q:"Primary tillage implement that inverts soil", c:["Chisel plow","Moldboard plow","Rotary tiller","Disc harrow"], a:1 },
+  { q:"Primary tillage implement that breaks hardpan beneath tillage layer", c:["Moldboard plow","Subsoiler","Chisel plow","Rotavator"], a:1 },
+  { q:"Untilled strip in the middle where two plow passes meet", c:["Headland","Dead furrow","Back furrow","Ridge"], a:1 },
+  { q:"Turn-around strip at field edge for tractor", c:["Dead furrow","Headland","Back furrow","Border"], a:1 },
+  { q:"Part of planter ahead of seed tube that opens soil", c:["Furrow opener","Seed tube","Press wheel","Coverer"], a:0 },
+  { q:"Planter component that meters seed from hopper", c:["Seed tube","Metering device","Furrow opener","Seeder boot"], a:1 },
+  { q:"Symbol required at the rear of slow-moving farm vehicles", c:["SMV emblem","Hazard light","Triangle reflector","Warning flag"], a:0 },
+  { q:"Chamber in grain dryer that distributes heated air uniformly", c:["Air duct","Plenum chamber","Drying bin","Venturi tube"], a:1 },
+  { q:"Smallest power class of combine harvester used in the Philippines", c:["20 hp","35 hp","40 hp","45 hp"], a:1 },
+  { q:"Commonly fabricated agricultural machinery in the Philippines", c:["4-wheel tractor","Rice mill / thresher","Combine harvester","Laser leveler"], a:1 },
+  { q:"Mechanized crop with widest adoption in the Philippines", c:["Rice","Corn","Coconut","Sugarcane"], a:0 },
+  { q:"Tillage operation after primary tillage to break clods and level soil", c:["Plowing","Harrowing","Ripping","Seeding"], a:1 },
+  { q:"Plow cut-depth for primary tillage", c:["3–6 in","6–18 in","18–24 in","> 24 in"], a:1 },
+  { q:"Recommended spacing between rows for transplanted rice", c:["20 cm","25 cm","30 cm","40 cm"], a:0 },
+  { q:"Ratio of actual field capacity to theoretical field capacity × 100 %", c:["Field efficiency","Mechanical efficiency","Drawbar efficiency","PTO efficiency"], a:0 },
+  { q:"Part of thresher that surrounds cylinder and helps separate grain", c:["Concave","Rasp bar","Feeder","Shaker"], a:0 },
+  { q:"Thresher type where panicles are fed while stalks are held manually", c:["Hold-on type","Throw-in type","Through-flow type","Axial-flow type"], a:0 },
+  { q:"Typical grain recovery of rice thresher", c:["90 %","97 %","85 %","80 %"], a:1 },
+  { q:"Planter part that closes furrow over the seed", c:["Double-disk closer","Furrow opener","Press wheel","Tamping shoe"], a:0 },
+  { q:"Typical standard PTO speed", c:["540 rpm","1000 rpm","1200 rpm","750 rpm"], a:1 },
+  { q:"Toxic but efficient refrigerant historically used in cold storage", c:["Ammonia","Freon-12","R-134a","CO₂"], a:0 },
+  { q:"Flash-point of diesel fuel", c:["~ 50 °C","–45 °F","25 °C","100 °C"], a:0 },
+  { q:"Flash-point of gasoline", c:["~ –45 °F","+ 45 °F","25 °C","50 °C"], a:0 },
+  { q:"Standard tire-inflation pressure for tractor", c:["30–60 psi","10–20 psi","60–80 psi","> 100 psi"], a:0 },
+  { q:"Phenomenon of incomplete combustion producing black exhaust", c:["Excess fuel / clogged air-filter","Too much oil","Low water in radiator","Alternator fault"], a:0 },
+  { q:"Main cause of white exhaust in diesel engine", c:["Water / coolant in combustion chamber","Oil burning","Clogged injector","Low compression"], a:0 },
+  { q:"Component that converts rotary motion to reciprocating pumping action in hand-pump", c:["Plunger / piston","Valve","Crank","Cam"], a:0 },
+  { q:"Type of hand-pump that lifts water from shallow depth only", c:["Lift-type hand-pump","Force-type","Double-acting","Centrifugal"], a:0 },
+  { q:"Type of hand-pump that can also force water under pressure", c:["Force-type hand-pump","Lift-type","Centrifugal","Turbine"], a:0 },
+  { q:"In force-type hand-pump, if it discharges water on both strokes", c:["Double-acting type","Single-acting type","Lift type","Force lift type"], a:0 },
+  { q:"Hydraulic structure used to measure flow via pressure head difference", c:["Venturi meter","Pitot tube","Weir","Flume"], a:0 },
+  { q:"Period slurry is held in biogas digester for decomposition", c:["Retention time","Compost time","Settling time","Digestion period"], a:0 },
+  { q:"Floating fibrous layer formed on slurry surface in biogas digester", c:["Scum","Sludge","Slurry","Residue"], a:0 },
+  { q:"Chamber in digester where gas accumulates", c:["Gas chamber","Plenum","Retention chamber","Collector"], a:0 },
+  { q:"Movable cover of biogas digester held by cantilever beam", c:["Gasholder retainer","Dome","Clamp","Anchor"], a:0 },
+  { q:"Standard temperature requirement for weaners (piglets) in housing", c:["~ 30 °C","25 °C","35 °C","20 °C"], a:0 },
+  { q:"PAES-recommended lighting intensity in goat/sheep house", c:["~ 200 lux","100 lux","150 lux","300 lux"], a:0 },
+  { q:"Alley width for vehicles in cattle feedlot", c:["~ 3 m","2 m","4 m","5 m"], a:0 },
+  { q:"Moisture gradient allowed between top & bottom layers in mechanical grain-dryer", c:["~ 2 %","5 %","3 %","1 %"], a:0 },
+  { q:"Major Philippine agency for R & D in ag mechanization", c:["PhilMech","BAFE","DA","PCA"], a:0 },
+  { q:"Stones in rectangular wire-mesh cages piled as wall/dam structure", c:["Gabions","Riprap","Sheet piles","Concrete wall"], a:0 },
+  { q:"First step in wind-energy project development", c:["Wind-velocity measurement","Site fencing","Feasibility study","Turbine procurement"], a:0 },
+  { q:"Device that records time-based data", c:["Timer","Tachometer","Chronometer","Stopwatch"], a:0 },
+  { q:"Ratio of output at drawbar to input at axle", c:["Mechanical efficiency","Field efficiency","Drawbar efficiency","PTO efficiency"], a:0 },
+  { q:"Common unit for measuring air content in fresh concrete", c:["Air meter","Hydrometer","Manometer","Pycnometer"], a:0 },
+  { q:"Enamel-type paint that dries fast on wood & interior walls", c:["Quick-drying enamel","Latex paint","Acrylic paint","Oil-based paint"], a:0 },
+  { q:"Distance required between slaughterhouse & residential/road areas", c:["~ 200 m","150 m","250 m","100 m"], a:0 },
+  { q:"Standard thickness of rectangular irrigation ditch (PAES)", c:["~ 0.15 m","0.20 m","0.25 m","0.10 m"], a:0 },
+  { q:"Standard thickness of trapezoidal ditch with rip-rap (PAES)", c:["~ 0.25 m","0.20 m","0.30 m","0.15 m"], a:0 },
+  { q:"Optimal dimension for warehouse to hold about 10 000 cavans", c:["~ 10 m × 30 m","12 m × 30 m","15 m × 25 m","20 m × 25 m"], a:0 },
+  { q:"Linear-feeder requirement for chicks (< 4 weeks old)", c:["~ 4 m per 100 birds","5 m","6 m","3 m"], a:0 },
+  { q:"Feeding-trough length for pigs weighing 15–25 kg", c:["~ 150 mm per animal","120 mm","180 mm","100 mm"], a:0 },
+  { q:"Standard housing wall-height for cattle (non-Brahman)", c:["~ 1.5 m","1.2 m","1.8 m","2.0 m"], a:0 },
+  { q:"Specific draft refers to", c:["Pull required per unit area of implement cross-section","Pull per machine width","Draft per plow depth","Total draft"], a:0 },
+  { q:"Power source for integral-mounted implements", c:["Tractor 3-point hitch","Drawbar","PTO","Auxiliary pump"], a:0 },
+  { q:"Main product gas from biomass gasification", c:["Producer gas (CO + H₂)","Biogas","Bio-oil","Ethanol"], a:0 },
+  { q:"Main product of anaerobic digestion", c:["Biogas (~ 50–70 % CH₄)","Producer gas","Bio-char","Bio-oil"], a:0 },
+  { q:"Main product of pyrolysis", c:["Bio-oil + bio-char","Biogas","Producer gas","Syngas"], a:0 },
+  { q:"Optimal C/N ratio for agricultural waste for good composting", c:["~ 25–30 : 1","20–25 : 1","15–20 : 1","30–35 : 1"], a:0 },
+  { q:"Stoichiometric air requirement for rice-hull gasification", c:["~ 4.7 kg air per kg fuel","5.6 kg/kg","6.5 kg/kg","7.0 kg/kg"], a:0 },
+  { q:"Hydraulic lift in tractor mainly provides", c:["Implement-power to raise/lower attached tools","PTO drive","Drawbar power","Auxiliary hydraulics"], a:0 },
+  { q:"Highest return-on-investment among common farm machines", c:["Grain dryer","Combine harvester","Tractor","Rice mill"], a:0 },
+  { q:"Legal requirement that all agri-machinery dealers provide after-sales service & warranty", c:["RA 10601 Sec 17","RA 10915","PD 1096","RA 11203"], a:0 },
+  { q:"Device that measures pressure in irrigation pipes", c:["Pressure gauge","Manometer","Pitot tube","Hydrometer"], a:0 },
+  { q:"Device used to measure total head (static + velocity) in flowing fluid", c:["Pitot tube","Venturi meter","Weir","Flume"], a:0 },
+  { q:"Usual unit for expressing pump discharge", c:["L/s or m³/h or gpm","L/h","cm³/s","ft³/h"], a:0 },
+  { q:"Conversion efficiency from shaft-power to water-power in pump", c:["Pump efficiency","Transmission efficiency","Motor efficiency","Hydraulic efficiency"], a:0 },
+  { q:"Conversion efficiency from engine to PTO shaft", c:["Transmission efficiency","Field efficiency","Drawbar efficiency","Pump efficiency"], a:0 },
+  { q:"Ratio of heat-transfer by convection to conduction in a fluid", c:["Nusselt number","Prandtl number","Grashof number","Reynolds number"], a:0 },
+  { q:"Dimensionless number expressing ratio of buoyant to viscous forces", c:["Grashof number","Nusselt number","Reynolds number","Weber number"], a:0 },
+  { q:"Dimensionless number expressing ratio of inertial to viscous forces", c:["Reynolds number","Grashof number","Nusselt number","Prandtl number"], a:0 },
+  { q:"Fuel rating for ignition quality of diesel fuel", c:["Cetane number","Octane number","Reid vapor pressure","Flash-point index"], a:0 },
+  { q:"Point of sales at which firm neither makes nor loses money", c:["Break-even point","Marginal cost point","Net profit point","Optimum cost point"], a:0 },
+  { q:"Reduction in value of machine over time", c:["Depreciation","Salvage value","Book value","Scrap value"], a:0 },
+  { q:"Act of putting capital into productive use expecting future return", c:["Investment","Expenditure","Capitalization","Costing"], a:0 },
+  { q:"Ongoing business expenses excluding direct production cost", c:["Overhead cost","Fixed cost","Variable cost","Incremental cost"], a:0 },
+  { q:"Cost associated with shipping goods to customers", c:["Freight cost","Delivery allowance","Handling charge","Packaging cost"], a:0 },
+  { q:"Form of business ownership by two or more persons", c:["Partnership","Sole proprietorship","Corporation","Cooperative"], a:0 },
+  { q:"Market structure with many independent sellers", c:["Pure competition","Monopoly","Oligopoly","Monopsony"], a:0 },
+  { q:"Market structure with few dominant sellers", c:["Oligopoly","Monopoly","Perfect competition","Monopsony"], a:0 },
+  { q:"Main post-harvest product from goat", c:["Chevon","Mutton","Lamb","Beef"], a:0 },
+  { q:"Process of removing undesirable non-productive animals from herd", c:["Culling","Roughing","Drafting","Sorting"], a:0 },
+  { q:"Term for group of piglets born from one farrowing", c:["Litter","Brood","Herd","Weaners"], a:0 },
+  { q:"Farm-planning step that looks ahead and evaluates alternatives", c:["Farm planning","Feasibility study","Work scheduling","Budgeting"], a:0 },
+  { q:"Broad approach of redesigning products & systems to be in harmony with nature", c:["Clean production","Green washing","Recycling","Composting"], a:0 },
+  { q:"Broad approach in agriculture emphasizing long-term ecological balance", c:["Sustainable agriculture","Organic farming","Regenerative farming","Ecological engineering"], a:0 },
+  { q:"Major legal framework that created ABE as a profession in PH", c:["RA 10915","RA 10601","PD 1096","RA 11203"], a:0 },
+  { q:"First organized recognition of Agricultural Engineering as a discipline worldwide", c:["1907 (formation of ASAE)","1920","1950","1800"], a:0 },
+  { q:"Professional society of Agricultural Engineers in the Philippines founded in 1950", c:["PSAE","ASAE","PAES","BAFE"], a:0 },
+  { q:"Scientific field dealing with designing & managing production & processing of food, feed, fiber, renewable resources in harmony with environment", c:["Agricultural & Biosystems Engineering","Agronomy","Soil Science","Environmental Science"], a:0 },
+  { q:"Renewable resource defined as replenished cyclically or continuously", c:["Renewable resource","Non-renewable resource","Exhaustible resource","Finite resource"], a:0 },
+  { q:"Mixture of gases (≈ 50–70 % methane + CO₂) produced by anaerobic digestion", c:["Biogas","Producer gas","Bio-oil","Bio-ethanol"], a:0 },
+  { q:"Overall ultimate source of energy driving earth’s climate & food systems", c:["The Sun","Fossil fuels","Geothermal heat","Biomass"], a:0 } // { q:"Question text", c:["A","B","C","D"], a:1 }
+  // { q:"Question text", c:["A","B","C","D"], a:2 },
+];
+
+/* 👉👉 PASTE your 100 Area 2 Objectives here (replace the array) */
+const AREA2_OBJECTIVES = [
+  
+  { q:"The soil property referring to the ratio of void volume to total soil volume is called:", c:["Bulk density","Specific gravity","Porosity","Moisture content"], a:2 },
+  { q:"Permanent wilting point is the soil moisture content at which plants:", c:["Grow vigorously","Start to flower","Can no longer extract water","Have maximum yield"], a:2 },
+  { q:"Field capacity is defined as soil moisture content:", c:["After saturation","After free drainage has stopped","At permanent wilting point","At oven-dry condition"], a:1 },
+  { q:"The maximum water a soil can hold against gravity is called:", c:["Hygroscopic water","Capillary water","Gravitational water","Saturated water"], a:1 },
+  { q:"The soil moisture available for plant growth is:", c:["Gravitational + hygroscopic","Capillary water","All soil water","Oven-dry water"], a:1 },
+  { q:"A soil with 50% sand, 30% silt, and 20% clay belongs to which USDA texture class?", c:["Loamy sand","Sandy clay loam","Sandy loam","Silt loam"], a:2 },
+  { q:"Which infiltration equation uses an exponential decay constant?", c:["Kostiakov","Philip","Horton","Green-Ampt"], a:2 },
+  { q:"In the Universal Soil Loss Equation (USLE), factor C refers to:", c:["Rainfall erosivity","Cover management","Soil erodibility","Conservation practice"], a:1 },
+  { q:"Which soil separates have the highest water-holding capacity?", c:["Sand","Silt","Clay","Gravel"], a:2 },
+  { q:"The unit of hydraulic conductivity (K) in SI is:", c:["m³/s","m/day","cm²/s","mm/hr"], a:1 },
+  { q:"Management Allowable Depletion (MAD) is expressed as:", c:["% of available moisture","% of total porosity","% of field capacity","% of irrigation efficiency"], a:0 },
+  { q:"A soil has field capacity = 30%, PWP = 15%. Available water = ?", c:["10%","15%","30%","45%"], a:1 },
+  { q:"The duty of water in irrigation refers to:", c:["Area irrigated per unit discharge","Depth of irrigation per unit time","Water consumed per crop season","Total rainfall received"], a:0 },
+  { q:"Crop water requirement (CWR) is equal to:", c:["Effective rainfall + ETc","Irrigation requirement + losses","Consumptive use + deep percolation","Precipitation + runoff"], a:0 },
+  { q:"The efficiency defined as the ratio of water beneficially used to water delivered is:", c:["Conveyance efficiency","Water use efficiency","Application efficiency","Storage efficiency"], a:1 },
+  { q:"Which irrigation method has the highest application efficiency?", c:["Flood","Furrow","Drip","Basin"], a:2 },
+  { q:"The type of canal lining most economical and common in Philippines:", c:["Brick","Concrete","Stone","Earthen"], a:1 },
+  { q:"The irrigation efficiency of a properly managed sprinkler system is about:", c:["30–40%","45–55%","65–75%","90–100%"], a:2 },
+  { q:"The irrigation water requirement is defined as:", c:["Gross irrigation requirement – effective rainfall","Consumptive use – effective rainfall","Field capacity – wilting point","Net irrigation requirement + losses"], a:1 },
+  { q:"Which drainage system uses buried pipes or tiles?", c:["Surface drainage","Subsurface drainage","Open ditch drainage","Bench terracing"], a:1 },
+  { q:"The science that deals with the occurrence and movement of water on Earth is:", c:["Hydrometeorology","Hydrology","Geology","Hydrogeology"], a:1 },
+  { q:"The ratio of actual evapotranspiration to potential evapotranspiration is:", c:["Crop factor (Kc)","Pan coefficient","Irrigation factor","Moisture depletion"], a:0 },
+  { q:"A hyetograph represents:", c:["Rainfall vs. time","Streamflow vs. time","Cumulative rainfall","Infiltration vs. time"], a:0 },
+  { q:"A mass curve represents:", c:["Discharge vs. time","Cumulative rainfall vs. time","Rainfall intensity vs. time","Evapotranspiration"], a:1 },
+  { q:"A hydrograph represents:", c:["Rainfall intensity vs. time","Stream discharge vs. time","Infiltration vs. time","Cumulative flow"], a:1 },
+  { q:"Peak runoff by the Rational Method is proportional to:", c:["Area only","Rainfall intensity only","Runoff coefficient, area, rainfall intensity","Base flow"], a:2 },
+  { q:"The time required for runoff to reach the outlet from the remotest point in a watershed is:", c:["Time of concentration","Recession time","Lag time","Duration"], a:0 },
+  { q:"In flood frequency analysis, the return period of a 10% probability flood is:", c:["5 years","10 years","20 years","100 years"], a:2 },
+  { q:"The probability of exceedance of the largest event in 20 years (m = 1, N = 20):", c:["4.76%","5%","10%","20%"], a:0 },
+  { q:"The type of precipitation caused by lifting over mountain barriers is:", c:["Convective","Cyclonic","Orographic","Frontal"], a:2 },
+  { q:"A pond constructed by digging below ground surface without levees is:", c:["Embankment pond","Excavated pond","Watershed pond","Borrow-pit pond"], a:1 },
+  { q:"The most common pond type in aquaculture is:", c:["Watershed","Excavated","Embankment","Circular"], a:2 },
+  { q:"The freeboard of a pond dike is the vertical distance between:", c:["Pond bottom and water surface","Water surface and top of dike","Spillway crest and dike","Seepage zone"], a:1 },
+  { q:"Recommended minimum freeboard for small ponds is:", c:["10 cm","20 cm","30 cm","50 cm"], a:2 },
+  { q:"For best aquaculture pond soils, the recommended pH range is:", c:["3–4","5–6","6.5–7.5","8–9"], a:2 },
+  { q:"The suitable DO concentration for aquaculture ponds is:", c:["1–2 mg/L","3–4 mg/L","≥ 5 mg/L","10 mg/L"], a:2 },
+  { q:"The stocking density for intensive aquaculture is:", c:["1–3 fish/m²","4–6 fish/m²","≥ 6 fish/m²","None of the above"], a:2 },
+  { q:"A common type of aerator in aquaculture ponds is:", c:["Paddle-wheel aerator","Turbine pump","Venturi injector","Jet pump"], a:0 },
+  { q:"The standard aeration efficiency (SAE) is measured in:", c:["kg O₂/hr","lb O₂/hp-hr","mg/L","% saturation"], a:1 },
+  { q:"A cage culture system differs from pen culture because:", c:["Cage is enclosed on all sides except top","Pen uses netting","Cage is always deeper","Pen is mobile"], a:0 },
+  { q:"Darcy’s law describes:", c:["Surface runoff","Groundwater flow through porous media","Open channel hydraulics","Rainfall intensity"], a:1 },
+  { q:"In Darcy’s law, hydraulic gradient is expressed as:", c:["dh/dL","dQ/dt","ΔV/Δt","P/A"], a:0 },
+  { q:"The water table is the boundary between:", c:["Vadose zone and capillary water","Saturated and unsaturated zones","Confined and unconfined aquifer","Artesian and non-artesian zone"], a:1 },
+  { q:"An aquifer with impermeable layers above and below is called:", c:["Confined aquifer","Unconfined aquifer","Aquiclude","Aquitard"], a:0 },
+  { q:"The Water Code of the Philippines is:", c:["RA 9275","RA 8550","PD 1067","RA 9003"], a:2 },
+  { q:"The Philippine Clean Water Act is:", c:["RA 9275","RA 8550","RA 9003","PD 1067"], a:0 },
+  { q:"The Philippine Fisheries Code is:", c:["RA 9275","RA 8550","RA 9003","PD 1067"], a:1 },
+  { q:"The volumetric moisture content of soil is given as:", c:["θv = Vw / Vt","θv = Vw / Vs","θv = Vs / Vt","θv = Vt / Vw"], a:0 },
+  { q:"The infiltration capacity is:", c:["Maximum rate at which soil absorbs water","Total depth of water applied","Rate of evapotranspiration","Percolation rate only"], a:0 },
+  { q:"Hygroscopic water is:", c:["Available to plants","Bound tightly to soil particles and unavailable","Capillary water","Saturation water"], a:1 },
+  { q:"Effective rainfall is defined as:", c:["Total rainfall received","Rainfall contributing to crop water requirement","Rainfall lost to runoff","Rainfall at field capacity"], a:1 },
+  { q:"The net irrigation requirement (NIR) is equal to:", c:["Gross irrigation depth – effective rainfall","Consumptive use – effective rainfall","Field capacity – wilting point","Net rainfall – soil moisture"], a:1 },
+  { q:"The consumptive use of water is also known as:", c:["Irrigation requirement","Evapotranspiration","Runoff","Percolation"], a:1 },
+  { q:"The most efficient irrigation method is:", c:["Drip","Border","Furrow","Flood"], a:0 },
+  { q:"In an unconfined aquifer, the Dupuit–Thiem equation for well discharge uses:", c:["Difference of hydraulic heads squared","Linear head loss","Specific yield","Storage coefficient"], a:0 },
+  { q:"A watershed with long narrow shape will have:", c:["High peak flow","Delayed, lower peak discharge","Immediate runoff","No effect on hydrograph"], a:1 },
+  { q:"The hyetograph is derived from:", c:["Rain gauge records","Stream gauging station","Pan evaporation","Lysimeter"], a:0 },
+  { q:"The recommended dissolved oxygen (DO) level for tilapia culture is:", c:["1 mg/L","3 mg/L","≥ 5 mg/L","10 mg/L"], a:2 },
+  { q:"The nitrogenous compound most toxic to fish is:", c:["NO₂","NO₃","NH₃","N₂"], a:2 },
+  { q:"The major factor affecting pond seepage is:", c:["Rainfall","Soil texture","Pond size","pH"], a:1 },
+  { q:"A trapezoidal canal has best hydraulic section when:", c:["Depth = bottom width","Depth = b/(2z)","Depth = side slope length","Depth = top width"], a:1 },
+  { q:"The reduction coefficient (F) for a sprinkler lateral with 10 outlets (full spacing) is:", c:["0.3766","0.100","0.200","0.3964"], a:0 },
+  { q:"The factor in USLE representing rainfall erosivity is:", c:["R","K","C","P"], a:0 },
+  { q:"A drainage canal running parallel to field boundaries is:", c:["Herringbone","Grid","Parallel layout","Random layout"], a:2 },
+  { q:"The constant in Horton’s equation is:", c:["Hydraulic conductivity","Decay constant","Initial infiltration","Capillary tension"], a:1 },
+  { q:"In irrigation scheduling, MAD usually ranges from:", c:["5–10%","10–20%","30–60%","70–90%"], a:2 },
+  { q:"Which law governs water rights in the Philippines?", c:["RA 9275","PD 1067","RA 8550","RA 9003"], a:1 },
+  { q:"The crop coefficient (Kc) for rice at mid-season is typically:", c:["0.7","1.05","1.20","1.5"], a:2 },
+  { q:"Which is NOT a method of surface irrigation?", c:["Basin","Border","Furrow","Drip"], a:3 },
+  { q:"In hydrology, base flow refers to:", c:["Storm runoff","Groundwater contribution to streamflow","Direct precipitation","Surface storage"], a:1 },
+  { q:"The depth of water stored in soil that is readily available to crops is:", c:["Field capacity","Permanent wilting point","Available moisture","Saturation"], a:2 },
+  { q:"The average pH for aquaculture pond water should be:", c:["4–5","5–6","6.5–8.5","9–10"], a:2 },
+  { q:"The term “hydraulic radius” is defined as:", c:["Area/wetted perimeter","Area/top width","Depth/width","Velocity/slope"], a:0 },
+  { q:"In unsteady drainage analysis, the Glover–Dumm equation is used for:", c:["Irrigation duty","Transient groundwater drawdown","Infiltration rate","Baseflow recession"], a:1 },
+  { q:"Which type of aquifer yields artesian wells?", c:["Unconfined","Confined","Aquiclude","Aquitard"], a:1 },
+  { q:"The hydraulic structure used to measure discharge by narrowing channel width is:", c:["Weir","Flume","Culvert","Sluice gate"], a:1 },
+  { q:"A 90° V-notch weir is most sensitive to:", c:["Large flows","Small flows","Groundwater","Base flow"], a:1 },
+  { q:"The peak discharge of a unit hydrograph is inversely proportional to:", c:["Basin area","Storm duration","Runoff coefficient","Rainfall intensity"], a:1 },
+  { q:"A soil sample that drains quickly and has low water-holding capacity is:", c:["Clay","Sand","Silt loam","Silty clay"], a:1 },
+  { q:"Hygroscopic water is typically held at tensions of:", c:["0.1–0.3 atm","1 atm","15 atm",">31 atm"], a:3 },
+  { q:"The main gas responsible for fish kills in ponds due to low oxygen is:", c:["O₂","CO₂","CH₄","NO₂"], a:1 },
+  { q:"The value of Manning’s n for earth canals is usually:", c:["0.01","0.015","0.022–0.030","0.05"], a:2 },
+  { q:"The infiltration rate after long time approaches:", c:["Initial rate","Final capacity","Field capacity","Zero"], a:1 },
+  { q:"A pond bottom should ideally be:", c:["Sandy","Clayey","Rocky","Gravely"], a:1 },
+  { q:"A structure that diverts water from a canal to farm ditches is:", c:["Turnout","Sluice gate","Spillway","Culvert"], a:0 },
+  { q:"The irrigation method most suitable for rice paddies is:", c:["Furrow","Flooding","Drip","Sprinkler"], a:1 },
+  { q:"The term “effective root zone” refers to:", c:["Depth of maximum rooting","Total soil depth","Depth of groundwater","Depth of topsoil only"], a:0 },
+  { q:"Soil erosion by water primarily begins with:", c:["Splash erosion","Gully erosion","Streambank erosion","Mass movement"], a:0 },
+  { q:"The infiltration equation f = at^b is:", c:["Horton","Kostiakov","Philip","Green-Ampt"], a:1 },
+  { q:"The instrument used to measure evaporation directly is:", c:["Lysimeter","Evaporation pan","Rain gauge","Piezometer"], a:1 },
+  { q:"The infiltration equation f = S/(2√t) + A is:", c:["Philip","Horton","Green-Ampt","Holtan"], a:0 },
+  { q:"In aquaculture, alkalinity is important because it:", c:["Buffers pH","Adds nitrogen","Increases salinity","Prevents seepage"], a:0 },
+  { q:"The hydraulic gradient in groundwater flow is:", c:["Head loss per unit length","Velocity per area","Volume per time","Energy per unit weight"], a:0 },
+  { q:"The main purpose of drainage is to:", c:["Store water","Remove excess water","Increase erosion","Increase infiltration"], a:1 },
+  { q:"The most widely used probability distribution for flood frequency analysis in the Philippines is:", c:["Normal","Gumbel","Pearson type I","Exponential"], a:1 },
+  { q:"The permanent structures used to measure water discharge in canals are:", c:["Culverts","Weirs","Bridges","Intakes"], a:1 },
+  { q:"The water balance equation for a watershed is:", c:["P = Q + ET + ΔS","P = ET – Q","P = ET + R","P = ΔS – Q"], a:0 },
+  { q:"The infiltration equation f = Ks(1 + ψΔθ/F) is:", c:["Green-Ampt","Horton","Kostiakov","Philip"], a:0 },
+  { q:"The best soil type for fishpond dike construction is:", c:["Clay loam","Sandy loam","Gravelly sand","Peat soil"], a:0 },
+  { q:"The major source of water loss in ponds is:", c:["Percolation/seepage","Runoff","Overflow","Aeration"], a:0 }
+  // { q:"...", c:["A","B","C","D"], a:1 },
+];
+
+/* 👉👉 Reserve for future Area 3 Objectives */
+const AREA3_OBJECTIVES = [ ];
+
+/* === Area 1 – Problem Solving (10 items) === */
+const AREA1_PROBLEM_SOLVING = [
+  {
+    q:"Q1. Drawbar Power<br>A tractor exerts a draft force of \\(18\\,\\text{kN}\\) while traveling at \\(6.5\\,\\text{km/h}\\). Compute the drawbar power.",
+    c:["29.7 hp","35.0 hp","43.0 hp","48.0 hp"], a:2,
+    s:"$$P_{db}=\\frac{F V}{274}=\\frac{18{,}000\\times6.5}{274}\\approx42.7\\;\\text{hp}\\approx43\\;\\text{hp}$$"
+  },
+  {
+    q:"Q2. Effective Field Capacity<br>A 3-bottom plow, each 33 cm, travels at 5 km/h with 76\\% efficiency.",
+    c:["0.27 ha/h","0.32 ha/h","0.38 ha/h","0.42 ha/h"], a:2,
+    s:"$$W=0.33\\times3=0.99\\,\\text{m}\\approx1.0\\,\\text{m}$$ $$\\text{TFC}=\\frac{W V}{10}=\\frac{1.0\\times5}{10}=0.50\\,\\text{ha/h}$$ $$\\text{EFC}=0.50\\times0.76=0.38\\,\\text{ha/h}$$"
+  },
+  {
+    q:"Q3. Wheel Slippage<br>A tractor drive wheel makes 1200 revolutions without load and 1125 revolutions under load.",
+    c:["5.0 %","6.25 %","7.0 %","8.0 %"], a:1,
+    s:"$$\\text{Slip}=\\frac{N_{no}-N_{load}}{N_{no}}\\times100=\\frac{1200-1125}{1200}\\times100=6.25\\%$$"
+  },
+  {
+    q:"Q4. Depreciation<br>Cost ₱100{,}000, salvage ₱13{,}000, life 12 yr. Accumulated depreciation at year 8?",
+    c:["₱57,000","₱58,000","₱59,000","₱60,000"], a:1,
+    s:"$$D=\\frac{C-S}{n}=\\frac{100{,}000-13{,}000}{12}=7{,}250\\;\\text{/yr}\\quad\\Rightarrow\\quad AD_8=7{,}250\\times8=\\text{₱}58{,}000$$"
+  },
+  {
+    q:"Q5. Brake Horsepower<br>Torque \\(T=300\\,\\text{N·m}\\) at \\(N=2000\\,\\text{rpm}\\).",
+    c:["77.5 hp","81.0 hp","84.1 hp","90.0 hp"], a:2,
+    s:"$$hp=\\frac{2\\pi N T}{60\\times746}=\\frac{2\\pi\\times2000\\times300}{60\\times746}=84.1\\;\\text{hp}$$"
+  },
+  {
+    q:"Q6. Plant Population (Corn)<br>2 seeds/hill, spacing \\(0.75\\times0.50\\,\\text{m}\\), 85\\% emergence.",
+    c:["40,000 plants/ha","45,300 plants/ha","47,000 plants/ha","50,000 plants/ha"], a:1,
+    s:"$$\\text{Area/hill}=0.75\\times0.50=0.375\\,\\text{m}^2$$ $$\\text{Hills/ha}=\\frac{10{,}000}{0.375}=26{,}667$$ $$\\text{Seeds}=26{,}667\\times2=53{,}334$$ $$\\text{Emergence}=53{,}334\\times0.85\\approx45{,}334\\approx45{,}300$$"
+  },
+  {
+    q:"Q7. Plant Population (Soybean)<br>Field 10 ha; spacing \\(0.30\\times0.20\\,\\text{m}\\); 80\\% emergence.",
+    c:["1,200,000","1,333,000","1,400,000","1,500,000"], a:1,
+    s:"$$\\text{Area/plant}=0.06\\,\\text{m}^2\\;\\Rightarrow\\;\\text{plants/ha}=\\frac{10{,}000}{0.06}=166{,}667$$ $$10\\,\\text{ha}=1{,}666{,}667\\;\\Rightarrow\\;0.80\\times1{,}666{,}667=1{,}333{,}333\\approx1{,}333{,}000$$"
+  },
+  {
+    q:"Q8. Motor Input Power<br>Delivers \\(20\\,\\text{hp}\\) at 90\\% efficiency. Input kW?",
+    c:["15.0 kW","16.0 kW","16.6 kW","18.0 kW"], a:2,
+    s:"$$P_{out}=20\\times0.746=14.92\\,\\text{kW}\\quad;\\quad P_{in}=\\frac{14.92}{0.90}=16.6\\,\\text{kW}$$"
+  },
+  {
+    q:"Q9. Irrigation Requirement<br>WR=600 mm, effective rainfall=200 mm, field eff.=60\\%.",
+    c:["600 mm","667 mm","700 mm","800 mm"], a:1,
+    s:"$$\\text{Net}=600-200=400\\,mm\\quad;\\quad \\text{Gross}=\\frac{400}{0.60}=667\\,mm$$"
+  },
+  {
+    q:"Q10. Grain Moisture Content<br>750 g at 18\\% MC (wb). Find weight at 14\\% MC.",
+    c:["710 g","720 g","730 g","740 g"], a:1,
+    s:"$$W_f=W_i\\frac{1-M_i}{1-M_f}=750\\times\\frac{0.82}{0.86}=715\\,g\\approx720\\,g$$"
+  }
+];
+
+const AREA2_PROBLEM_SOLVING = [ ];
+const AREA3_PROBLEM_SOLVING = [ ];
+
+/* ================= Start Exam ================= */
+function startExam(category, chosenMode){
+  currentCategory=category;
+  mode = chosenMode || 'normal';
+
+  // Build item list for the selected area/category
+  if(currentArea==='AREA1'){
+    if(category==='OBJECTIVES') questions = AREA1_OBJECTIVES.slice();
+    else if(category==='PROBLEM_SOLVING') questions = AREA1_PROBLEM_SOLVING.slice();
+    else questions = AREA1_OBJECTIVES.concat(AREA1_PROBLEM_SOLVING);
+  } else if(currentArea==='AREA2'){
+    if(category==='OBJECTIVES') questions = AREA2_OBJECTIVES.slice();
+    else if(category==='PROBLEM_SOLVING') questions = AREA2_PROBLEM_SOLVING.slice();
+    else questions = AREA2_OBJECTIVES.concat(AREA2_PROBLEM_SOLVING);
+  } else {
+    if(category==='OBJECTIVES') questions = AREA3_OBJECTIVES.slice();
+    else if(category==='PROBLEM_SOLVING') questions = AREA3_PROBLEM_SOLVING.slice();
+    else questions = AREA3_OBJECTIVES.concat(AREA3_PROBLEM_SOLVING);
+  }
+
+  // Prepare runtime (shuffle choices per question)
+  questions = questions.map(q=>({ q:q.q, c:q.c.slice(), a:q.a, s:q.s||"", perm:null, aShuf:q.a }));
+
+  idx=0; correct=0; answered.clear();
+  quizTitle.textContent = `${currentArea} – ${currentCategory} (${mode==='time'?'Time Trial':'Normal'})`;
+  document.getElementById('areaPage').style.display='none';
+  document.getElementById('categoryPage').style.display='none';
+  document.getElementById('quizPage').style.display='block';
+
+  // === Timer setup ===
+  clearInterval(timerId);
+  if(mode==='time'){
+    const mins = (category==='OBJECTIVES')?60:(category==='PROBLEM_SOLVING')?120:180;
+    timeLimit = mins; timeLeft = mins*60; timerBox.style.display='inline'; startTimer();
+  }else{
+    timeLimit = 0; timeLeft = 0; timerBox.style.display='none';
+  }
+
+  render();
+}
+
+/* ================= Timer ================= */
+function startTimer(){
+  clearInterval(timerId);
+  timerBox.textContent = `⏳ ${formatTime(timeLeft)}`;
+  timerId = setInterval(()=>{
+    timeLeft--;
+    if(timeLeft<=0){ clearInterval(timerId); showFinalModal(); }
+    else { timerBox.textContent = `⏳ ${formatTime(timeLeft)}`; }
+  },1000);
+}
+
+/* ================= Render ================= */
+function render(){
+  if(!questions.length){ promptEl.innerHTML='<span class="muted">No questions yet.</span>'; return; }
+  const q=questions[idx];
+
+  progressText.innerHTML = `Question ${idx+1} of ${questions.length}`;
+  const pct = questions.length ? ((idx)/questions.length)*100 : 0;
+  progressFill.style.width = `${pct}%`;
+
+  // Prefix Q# if not present (avoid double Q labels)
+  const raw = (q.q||'').trim();
+  promptEl.innerHTML = /^Q\s*\d+/i.test(raw) ? raw : `Q${idx+1}. ${raw}`;
+
+  choicesEl.innerHTML='';
+  if(!q.perm){ q.perm = shuffle([0,1,2,3]); q.aShuf = q.perm.indexOf(q.a); }
+  q.perm.forEach((orig,i)=>{
+    const d=document.createElement('div');
+    d.className='choice';
+    d.innerHTML=q.c[orig];
+    d.onclick=()=>selectAnswer(i);
+    choicesEl.appendChild(d);
+  });
+
+  solutionBox.style.display='none';
+  solutionBox.innerHTML='';
+
+  if(answered.has(idx)){
+    applyFeedback(answered.get(idx), q.aShuf);
+    if(q.s){ solutionBox.style.display='block'; solutionBox.innerHTML=q.s; typesetTargets([solutionBox]); }
+  }
+
+  prevBtn.disabled = idx===0;
+  typesetTargets([promptEl, choicesEl]);
+}
+
+function selectAnswer(i){
+  const q=questions[idx];
+  if(answered.has(idx)) return;
+  answered.set(idx,i);
+  if(i===q.aShuf) correct++;
+
+  applyFeedback(i,q.aShuf);
+  if(q.s){ solutionBox.style.display='block'; solutionBox.innerHTML=q.s; typesetTargets([solutionBox]); }
+
+  if(idx===questions.length-1){ showFinalModal(); }
+}
+
+function applyFeedback(sel,correctIdx){
+  [...choicesEl.children].forEach((c,j)=>{
+    c.classList.remove('correct','wrong');
+    if(j===correctIdx) c.classList.add('correct');
+    if(j===sel && j!==correctIdx) c.classList.add('wrong');
+  });
+}
+
+nextBtn.onclick=()=>{ if(idx<questions.length-1){ idx++; render(); } else if(!answered.has(idx)){ showFinalModal(); } };
+prevBtn.onclick=()=>{ if(idx>0){ idx--; render(); } };
+backBtn.onclick=()=>{ clearInterval(timerId); quizPage.style.display='none'; categoryPage.style.display='block'; };
+
+/* ================= Score & Leaderboard ================= */
+function showFinalModal(){
+  clearInterval(timerId);
+  const pct = questions.length ? Math.round((correct/questions.length)*100) : 0;
+  finalScoreEl.textContent = `You scored ${correct} / ${questions.length} (${pct}%)`;
+
+  if (pct === 100) resultHeading.textContent = "Congrats Contact keith melbourne and aeron for 1000 gcash";
+  else if (pct > 70) resultHeading.textContent = "Nice Bayaw! Try to reached 100!";
+  else resultHeading.textContent = "Try Again Bayaw!";
+
+  const nickname = getNick() || 'Anonymous';
+  const payload = {
+    nickname, area: currentArea, category: currentCategory,
+    mode, percent: pct, correct, total: questions.length,
+    timestamp: new Date().toISOString()
+  };
+  saveScore(payload).finally(()=>{ scoreModal.style.display='flex'; });
+}
+
+retryBtn.onclick=()=>{
+  scoreModal.style.display='none';
+  idx=0; correct=0; answered.clear();
+  questions.forEach(q=>{ q.perm=null; q.aShuf=q.a; });
+  if(mode==='time'){
+    const mins = (currentCategory==='OBJECTIVES')?60:(currentCategory==='PROBLEM_SOLVING')?120:180;
+    timeLeft = mins*60; startTimer();
+  }
+  render();
+};
+continueBtn.onclick=()=>{ scoreModal.style.display='none'; quizPage.style.display='none'; categoryPage.style.display='block'; };
+
+/* Save to Google Apps Script + local backup */
+async function saveScore(data){
+  // local backup
+  // Local storage saving disabled to use global leaderboard only
+
+  if(!SHEETS_URL){ return; }
+  try{
+    await fetch(SHEETS_URL, { method: 'POST', body: JSON.stringify(data) });
+    try { await loadLeaderboard(); } catch(_) {}}catch(e){ /* offline or script error */ }
+}
+
+/* Leaderboard modal */
+leaderboardBtn.onclick=()=>{ boardModal.style.display='flex'; loadLeaderboard(); };
+closeBoardBtn.onclick=()=>{ boardModal.style.display='none'; };
+
+async function loadLeaderboard(){
+  const tbody=boardTable.querySelector('tbody');
+  tbody.innerHTML = '<tr><td colspan="6" class="muted">Loading…</td></tr>';
+
+  let rows=[];
+  try{
+    const r = await fetch(`${SHEETS_URL}?limit=200&cb=${Date.now()}`, { cache: 'no-store' });
+    const j=await r.json();
+    if(j?.ok && Array.isArray(j.rows)) rows=j.rows;
+  }catch(e){ /* ignore */ }
+
+  if(!rows.length){ console.warn('No cloud data found – using local backup (offline)'); rows = JSON.parse(localStorage.getItem('abele_local_scores')||'[]'); }
+
+  if(!rows.length){
+    tbody.innerHTML = '<tr><td colspan="6" class="muted">No scores yet.</td></tr>';
+    return;
+  }
+
+  rows.sort((a,b)=> (b.percent||0)-(a.percent||0) || new Date(a.timestamp||0)-new Date(b.timestamp||0));
+
+  tbody.innerHTML='';
+  rows.forEach((r,i)=>{
+    const nameHtml = (r.nickname||'') + (isCreator(r.nickname)?CREATOR_BADGE_HTML:'');
+    const dateStr = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+    const tr=document.createElement('tr');
+    tr.innerHTML = `
+      <td>${i+1}</td>
+      <td>${nameHtml}</td>
+      <td><strong>${r.percent||0}%</strong> <span class="muted">(${r.correct||0}/${r.total||0})</span></td>
+      <td>${r.area||''}/${r.category||''}</td>
+      <td>${r.mode||'normal'}</td>
+      <td class="muted">${dateStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ================= Admin / Creator Panel ================= */
+document.getElementById('openAdminBtn').onclick=()=>{
+  const n=getNick();
+  if(!isCreator(n)){ alert("Only the creator can access this panel."); return; }
+  adminPIN.value='';
+  adminLogin.style.display='block';
+  adminPanel.style.display='none';
+  adminModal.style.display='flex';
+};
+adminEnterBtn.onclick=()=>{
+  if((adminPIN.value||'')===CREATOR_PIN){
+    creatorNameEl.textContent = CREATOR_NAME;
+    accessKeyInput.value = localStorage.getItem('abele_access_key') || ACCESS_KEY;
+    adminLogin.style.display='none';
+    adminPanel.style.display='block';
+  }else{
+    alert('Wrong PIN');
+  }
+};
+document.getElementById('closeAdminBtn').onclick=()=> adminModal.style.display='none';
+adminModal.addEventListener('click',e=>{ if(e.target===adminModal) adminModal.style.display='none'; });
+
+document.getElementById('lockSiteBtn').onclick = ()=>{ setLockedUI(true); alert('Site Locked'); };
+document.getElementById('unlockSiteBtn').onclick = ()=>{ setLockedUI(false); alert('Site Unlocked'); };
+
+document.getElementById('updateKeyBtn').onclick=()=>{
+  const k=(accessKeyInput.value||'').trim(); if(!k) return;
+  ACCESS_KEY = k;
+  localStorage.setItem('abele_access_key', k);
+  alert('Access Key updated.');
+};
+
+document.getElementById('setBannerBtn').onclick=()=>{
+  const msg=(document.getElementById('bannerInput').value||'').trim();
+  localStorage.setItem('abele_banner', msg);
+  loadBanner();
+};
+document.getElementById('clearBannerBtn').onclick=()=>{
+  localStorage.removeItem('abele_banner');
+  loadBanner();
+};
+
+document.getElementById('clearLeaderboardBtn').onclick=()=>{
+  if(!confirm('Clear all leaderboard scores from the Sheet?')) return;
+  fetch(SHEETS_URL+'?clear=1').then(r=>r.json()).then(()=>{
+    alert('Leaderboard cleared (if Apps Script supports clear).');
+  }).catch(()=>alert('Request sent. Ensure your Apps Script supports ?clear=1.'));
+};
+
+/* ================= Close small modals by outside click ================= */
+[scoreModal,boardModal, nickModal, accessModal].forEach(m=>{
+  m.addEventListener('click',e=>{ if(e.target===m) m.style.display='none'; });
+});
+
+/* Initial typeset */
+document.addEventListener('DOMContentLoaded', ()=>{ typeset(); });
+</script>
+</body>
+</html>
