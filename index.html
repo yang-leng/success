@@ -231,7 +231,7 @@ input[type="text"],input[type="password"]{
 <script>
 /* ================= CONFIG ================= */
 /* Replace with your GAS Web App URL */
-const SHEETS_URL = "https://script.google.com/macros/s/AKfycbzJK-hUahqzk_qHZsQwr2Y3VrAf2a6hd4f71tPznatw3PoB8KylgWfafbEwOIwR0R-viw/exec";
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbw5a3eHyn1WJglDOR8m_3jiAQwHKXh63v9u77FAiVqcDMpHvbdx4OG9l8380b04S4Is/exec";
 
 const CREATOR_NAME = "Bryan";
 const CREATOR_PIN  = "001500";
@@ -795,15 +795,12 @@ continueBtn.onclick=()=>{ scoreModal.style.display='none'; quizPage.style.displa
 /* Save to Google Apps Script + local backup */
 async function saveScore(data){
   // local backup
-  const k='abele_local_scores';
-  const local=JSON.parse(localStorage.getItem(k)||'[]');
-  local.push(data);
-  localStorage.setItem(k, JSON.stringify(local.slice(-200)));
+  // Local storage saving disabled to use global leaderboard only
 
   if(!SHEETS_URL){ return; }
   try{
     await fetch(SHEETS_URL, { method: 'POST', body: JSON.stringify(data) });
-  }catch(e){ /* offline or script error */ }
+    try { await loadLeaderboard(); } catch(_) {}}catch(e){ /* offline or script error */ }
 }
 
 /* Leaderboard modal */
@@ -816,15 +813,12 @@ async function loadLeaderboard(){
 
   let rows=[];
   try{
-    const r=await fetch(SHEETS_URL+'?limit=200');
+    const r = await fetch(`${SHEETS_URL}?limit=200&cb=${Date.now()}`, { cache: 'no-store' });
     const j=await r.json();
     if(j?.ok && Array.isArray(j.rows)) rows=j.rows;
   }catch(e){ /* ignore */ }
 
-  if(!rows.length){
-    const local=JSON.parse(localStorage.getItem('abele_local_scores')||'[]');
-    rows = local;
-  }
+  if(!rows.length){ console.warn('No cloud data found – using local backup (offline)'); rows = JSON.parse(localStorage.getItem('abele_local_scores')||'[]'); }
 
   if(!rows.length){
     tbody.innerHTML = '<tr><td colspan="6" class="muted">No scores yet.</td></tr>';
